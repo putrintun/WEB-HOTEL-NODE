@@ -1,36 +1,35 @@
-//import library
 const express = require("express");
 const bodyParser = require("body-parser");
 const { Op } = require("sequelize");
 const auth = require("../auth");
 
-//implementasi library
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-//import model
 const model = require("../models/index");
+const access = require('../akses')
 const tipe_kamar = model.tipe_kamar;
 
-//import multer
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-//config storage image
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "./public/images/tipe kamar");
   },
   filename: (req, file, cb) => {
-    cb(null, "img-" + Date.now() + path.extname(file.originalname));
+    cb(null, "kamar-" + Date.now() + path.extname(file.originalname));
   },
 });
 let upload = multer({ storage: storage });
 
-// get all data tipe_kamar
 app.get("/getAllData", auth, async (req, res) => {
+  let granted = await access.AdminTamu(req);
+  if (!granted.status) {
+    return res.status(403).json(granted.message);
+  }
   await tipe_kamar
     .findAll()
     .then((result) => {
@@ -47,8 +46,11 @@ app.get("/getAllData", auth, async (req, res) => {
     });
 });
 
-// get data by id tipe_kamar
 app.get("/getById/:id", auth, async (req, res) => {
+  let granted = await access.AdminTamu(req);
+  if (!granted.status) {
+    return res.status(403).json(granted.message);
+  }
   await tipe_kamar
     .findByPk(req.params.id)
     .then((result) => {
@@ -72,8 +74,11 @@ app.get("/getById/:id", auth, async (req, res) => {
     });
 });
 
-// create tipe_kamar
-app.post("/create", upload.single("foto"), async (req, res) => {
+app.post("/create", upload.single("foto"), auth, async (req, res) => {
+  let granted = await access.admin(req);
+  if (!granted.status) { 
+    return res.status(403).json(granted.message);
+  }
   const data = {
     nama_tipe_kamar: req.body.nama_tipe_kamar,
     harga: req.body.harga,
@@ -98,14 +103,15 @@ app.post("/create", upload.single("foto"), async (req, res) => {
     });
 });
 
-// delete tipe_kamar
 app.delete("/delete/:id_tipe_kamar", auth, async (req, res) => {
+  let granted = await access.admin(req);
+  if (!granted.status) {
+    return res.status(403).json(granted.message);
+  }
   const param = { id_tipe_kamar: req.params.id_tipe_kamar };
-  // delete old file
   tipe_kamar.findOne({ where: param }).then((result) => {
     if (result) {
       let oldFileName = result.foto;
-      // delete old file
       let dir = path.join(
         __dirname,
         "../public/images/tipe kamar/",
@@ -114,12 +120,10 @@ app.delete("/delete/:id_tipe_kamar", auth, async (req, res) => {
       fs.unlink(dir, (err) => err);
     }
   });
-
-  // delete data
   tipe_kamar
     .destroy({ where: param })
     .then((result) => {
-      if (result) {
+      if (result) { 
         res.status(200).json({
           status: "success",
           message: "type room has been deleted",
@@ -140,12 +144,12 @@ app.delete("/delete/:id_tipe_kamar", auth, async (req, res) => {
     });
 });
 
-// edit tipe_kamar
-app.patch(
-  "/edit/:id_tipe_kamar",
-  auth,
-  upload.single("foto"),
+app.patch("/edit/:id_tipe_kamar", auth, upload.single("foto"),
   async (req, res) => {
+    let granted = await access.admin(req);
+    if (!granted.status) {
+      return res.status(403).json(granted.message);
+    }
     const param = { id_tipe_kamar: req.params.id_tipe_kamar };
     const data = {
       nama_tipe_kamar: req.body.nama_tipe_kamar,
@@ -153,21 +157,16 @@ app.patch(
       deskripsi: req.body.deskripsi,
       resultArr: {},
     };
-
     tipe_kamar.findOne({ where: param }).then((result) => {
       if (result) {
-        // delete old file
         if (req.file) {
-          // get data by id
           let oldFileName = result.foto;
-          // delete old file
           let dir = path.join(
             __dirname,
             "../public/images/tipe kamar/",
             oldFileName
           );
           fs.unlink(dir, (err) => err);
-          // set new filename
           data.foto = req.file.filename;
         }
         tipe_kamar
@@ -208,33 +207,32 @@ app.patch(
   }
 );
 
-// search tipe_kamar
-app.get("/search/:nama_tipe_kamar", auth, async (req, res) => {
-  tipe_kamar
-    .findAll({
-      where: {
-        [Op.or]: [
-          {
-            nama_tipe_kamar: {
-              [Op.like]: "%" + req.params.nama_tipe_kamar + "%",
-            },
-          },
-        ],
-      },
-    })
-    .then((result) => {
-      res.status(200).json({
-        status: "success",
-        message: "result of " + req.params.nama_tipe_kamar + "",
-        data: result,
-      });
-    })
-    .catch((error) => {
-      res.status(400).json({
-        status: "error",
-        message: error.message,
-      });
-    });
-});
+// app.get("/search/:nama_tipe_kamar", auth, async (req, res) => {
+//   tipe_kamar
+//     .findAll({
+//       where: {
+//         [Op.or]: [
+//           {
+//             nama_tipe_kamar: {
+//               [Op.between]: "%" + req.params.nama_tipe_kamar + "%",
+//             },
+//           },
+//         ],
+//       },
+//     })
+//     .then((result) => {
+//       res.status(200).json({
+//         status: "success",
+//         message: "result of " + req.params.nama_tipe_kamar + "",
+//         data: result,
+//       });
+//     })
+//     .catch((error) => {
+//       res.status(400).json({
+//         status: "error",
+//         message: error.message,
+//       });
+//     });
+// });
 
 module.exports = app;

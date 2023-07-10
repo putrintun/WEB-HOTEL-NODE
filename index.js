@@ -27,11 +27,8 @@ app.use("/kamar", kamar);
 const pemesanan = require("./routes/pemesanan");
 app.use("/pemesanan", pemesanan);
 
-// endpoint detail_pemesanan
-const detail_pemesanan = require("./routes/detail_pemesanan");
-app.use("/detail_pemesanan", detail_pemesanan);
-
 //run server
 app.listen(PORT, () => {
   console.log("server run on port " + PORT);
+  console.log("UKK HOTEL INTAN XII RPL 6");
 });

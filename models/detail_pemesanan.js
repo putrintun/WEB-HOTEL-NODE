@@ -9,14 +9,14 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      detail_pemesanan.belongsTo(models.pemesanan, {
+      this.belongsTo(models.pemesanan,{
         foreignKey: "id_pemesanan",
-        as: "pemesanan",
-      });
-      detail_pemesanan.belongsTo(models.kamar, {
+        as: "pemesanan_detail"
+      })
+      this.belongsTo(models.kamar,{
         foreignKey: "id_kamar",
-        as: "kamar",
-      });
+        as: "kamar_detail"
+      })
     }
   }
   detail_pemesanan.init(
@@ -28,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       id_pemesanan: DataTypes.INTEGER,
       id_kamar: DataTypes.INTEGER,
-      tgl_akses: DataTypes.DATE,
+      tgl_akses: DataTypes.DATEONLY,
       harga: DataTypes.INTEGER,
     },
     {

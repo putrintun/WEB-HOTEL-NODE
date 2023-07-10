@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const SECRET_KEY = "UKKcyangpalingcantik";
+const SECRET_KEY = "UKKhotel";
 auth = (req, res, next) => {
   let header = req.headers.authorization;
   let token = header && header.split(" ")[1];
@@ -16,7 +16,9 @@ auth = (req, res, next) => {
           message: "Invalid token",
         });
       } else {
+        req.user = user
         next();
+        
       }
     });
   }
